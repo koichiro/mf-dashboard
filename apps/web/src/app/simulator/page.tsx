@@ -2,6 +2,7 @@ import { getHoldingsWithLatestValues } from "@mf-dashboard/db";
 import type { Metadata } from "next";
 import { CompoundSimulator } from "../../components/charts/compound-simulator/compound-simulator";
 import { PageLayout } from "../../components/layout/page-layout";
+import { getSimulatorDefaults } from "../../lib/simulator-config";
 
 export const metadata: Metadata = {
   title: "シミュレーター",
@@ -19,6 +20,7 @@ export async function SimulatorContent({ groupId }: { groupId?: string }) {
   return (
     <PageLayout title="シミュレーター">
       <CompoundSimulator
+        {...getSimulatorDefaults()}
         defaultInitialAmount={totalInvestment}
         portfolioContext={
           isDemo

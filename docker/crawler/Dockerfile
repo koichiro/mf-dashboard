@@ -44,9 +44,11 @@ RUN package_manager=$(node -p "require('./package.json').packageManager") \
 
 COPY . .
 
-RUN mkdir -p /app/data /app/crawler-state \
+RUN chmod -R a+rX /app \
+    && mkdir -p /app/data /app/crawler-state \
     && chmod 1777 /app/crawler-state \
     && chmod 0755 /app/docker/crawler/entrypoint.sh
 USER node
+RUN cd /app/apps/crawler && node --import tsx --eval ""
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/docker/crawler/entrypoint.sh"]
