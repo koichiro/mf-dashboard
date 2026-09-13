@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
-test("deployment Compose keeps image pairing, host paths, auth volume and runtime settings", (t) => {
+void test("deployment Compose keeps image pairing, host paths, auth volume and runtime settings", (t) => {
   const dir = mkdtempSync(join(tmpdir(), "deployment-compose-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const env = {
@@ -22,26 +22,30 @@ test("deployment Compose keeps image pairing, host paths, auth volume and runtim
     NEXT_PUBLIC_SIMULATOR_CURRENT_AGE: "30",
     HISTORY_START_MONTH: "2020-01",
   };
-  const config = JSON.parse(
-    execFileSync(
-      "docker",
-      [
-        "compose",
-        "--project-name",
-        "test-existing-project",
-        "--project-directory",
-        dir,
-        "--env-file",
-        "/dev/null",
-        "-f",
-        resolve("docker/release/compose.yml"),
-        "config",
-        "--format",
-        "json",
-      ],
-      { env, encoding: "utf8" },
-    ),
-  );
+  const readConfig = (file) =>
+    JSON.parse(
+      execFileSync(
+        "docker",
+        [
+          "compose",
+          "--project-name",
+          "test-existing-project",
+          "--project-directory",
+          dir,
+          "--env-file",
+          "/dev/null",
+          "-f",
+          resolve(file),
+          "config",
+          "--format",
+          "json",
+        ],
+        { env, encoding: "utf8" },
+      ),
+    );
+  const config = readConfig("docker/release/compose.yml");
+  const sourceConfig = readConfig("compose.yml");
+  assert.equal(config.services.cloudflared.image, sourceConfig.services.cloudflared.image);
   for (const service of ["web", "crawler", "migrate"]) {
     assert.equal(config.services[service].build, undefined);
     assert.equal(config.services[service].user, "1234:2345");
