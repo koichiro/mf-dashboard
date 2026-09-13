@@ -13,7 +13,10 @@ import { parseChatSuggestedPrompts } from "../lib/chat-config";
 import { createRootMetadata } from "../lib/metadata";
 import { waitForRuntimeData } from "../lib/runtime-rendering";
 
-export const metadata = createRootMetadata();
+export async function generateMetadata() {
+  await waitForRuntimeData();
+  return createRootMetadata();
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   await waitForRuntimeData();
