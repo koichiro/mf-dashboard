@@ -63,7 +63,7 @@ esac
   return { root, release, run, log: () => (existsSync(log) ? readFileSync(log, "utf8") : "") };
 }
 
-test("backs up stopped writers, migrates once, checks health, preserves project and release history", (t) => {
+void test("backs up stopped writers, migrates once, checks health, preserves project and release history", (t) => {
   const s = setup(t);
   const result = s.run();
   assert.equal(result.status, 0, result.stderr);
@@ -87,7 +87,7 @@ test("backs up stopped writers, migrates once, checks health, preserves project 
 });
 
 for (const failure of ["pull", "busy", "migrate", "health"]) {
-  test(`failure at ${failure} does not advance the active release`, (t) => {
+  void test(`failure at ${failure} does not advance the active release`, (t) => {
     const s = setup(t),
       result = s.run({ TEST_FAIL: failure });
     assert.notEqual(result.status, 0);
@@ -98,12 +98,12 @@ for (const failure of ["pull", "busy", "migrate", "health"]) {
     if (failure === "health") assert.match(s.log().trim().split("\n").at(-1), /^stop /);
   });
 }
-test("rejects subpath configuration before stopping services", (t) => {
+void test("rejects subpath configuration before stopping services", (t) => {
   const s = setup(t);
   assert.notEqual(s.run({ TEST_BASE_PATH: "/dashboard" }).status, 0);
   assert.doesNotMatch(s.log(), /stop /);
 });
-test("rejects malformed image metadata without executing it", (t) => {
+void test("rejects malformed image metadata without executing it", (t) => {
   const s = setup(t);
   writeFileSync(join(s.release, "release.env"), "WEB_IMAGE=$(touch invalid)\n");
   assert.notEqual(s.run().status, 0);
