@@ -44,6 +44,10 @@ describe("crawler page structures", () => {
     await withNewPage(context, async (page) => {
       await gotoPage(page, mfUrls.home, "/");
 
+      // Structure-only check: never click the control or start account refresh.
+      const refreshButton = page.locator('a:has-text("一括更新")').first();
+      await refreshButton.waitFor({ state: "visible", timeout: 10000 });
+
       const totalAssets = page.locator(".heading-radius-box, .total-assets").first();
       await totalAssets.waitFor({ state: "visible", timeout: 10000 });
       const changeRows = page.locator("table.pfm-sheet-table").first().locator("tbody tr");

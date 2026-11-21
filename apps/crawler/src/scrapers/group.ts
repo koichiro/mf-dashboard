@@ -1,6 +1,7 @@
 import type { Group } from "@mf-dashboard/db/types";
 import { mfUrls } from "@mf-dashboard/meta/urls";
 import type { Page } from "playwright";
+import { navigateToPage } from "../browser/navigation.js";
 import { debug, log, warn } from "../logger.js";
 
 /** 「グループ選択なし」を表す特別なID */
@@ -78,22 +79,7 @@ async function isGroupSelectorVisible(groupSelect: ReturnType<Page["locator"]>):
 }
 
 async function navigateToHomeWithRetry(page: Page): Promise<void> {
-  try {
-    await page.goto(mfUrls.home, {
-      waitUntil: "domcontentloaded",
-    });
-  } catch (err) {
-    if (page.isClosed()) throw err;
-    const message = err instanceof Error ? err.message : String(err);
-    if (!message.includes("net::ERR_ABORTED")) {
-      throw err;
-    }
-    // Retry once if navigation was aborted by a subsequent navigation.
-    await page.waitForTimeout(1000);
-    await page.goto(mfUrls.home, {
-      waitUntil: "domcontentloaded",
-    });
-  }
+  await navigateToPage(page, mfUrls.home);
 }
 
 /**
@@ -235,8 +221,7 @@ export async function createGroupScope(
             warn(`Failed to restore group (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
             // ページ状態をリセットしてリトライ
             try {
-              await page.goto(mfUrls.home, {
-                waitUntil: "domcontentloaded",
+              await navigateToPage(page, mfUrls.home, {
                 timeout: 10000,
               });
             } catch {

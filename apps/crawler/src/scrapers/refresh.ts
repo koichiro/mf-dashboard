@@ -1,48 +1,22 @@
 import type { RefreshResult } from "@mf-dashboard/db/types";
 import { mfUrls } from "@mf-dashboard/meta/urls";
 import type { Page } from "playwright";
+import { navigateToPage } from "../browser/navigation.js";
 import { debug, info, warn } from "../logger.js";
 
 const DEFAULT_MAX_WAIT_MINUTES = 20;
 const POLL_INTERVAL_MS = 30000; // 30 seconds
-const NAVIGATION_RETRY_DELAY_MS = 1000;
+const REFRESH_BUTTON_TIMEOUT_MS = 120000;
 
 interface NavigationOptions {
   retryDelayMs?: number;
-}
-
-function isRetryableNavigationError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes("net::ERR_ABORTED") || message.includes("Timeout");
 }
 
 export async function navigateToAccountsPage(
   page: Page,
   options: NavigationOptions = {},
 ): Promise<void> {
-  const MAX_RETRIES = 1;
-  const retryDelayMs = options.retryDelayMs ?? NAVIGATION_RETRY_DELAY_MS;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      await page.goto(mfUrls.accounts, {
-        waitUntil: "domcontentloaded",
-      });
-      return;
-    } catch (err) {
-      if (page.isClosed()) {
-        throw err;
-      }
-
-      if (!isRetryableNavigationError(err) || attempt === MAX_RETRIES) {
-        throw err;
-      }
-
-      // A crashed Playwright page can reject page.waitForTimeout() and mask the
-      // original navigation error. Use a process timer between attempts instead.
-      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
-    }
-  }
+  await navigateToPage(page, mfUrls.accounts, options);
 }
 
 export async function getRefreshStatus(
@@ -125,11 +99,12 @@ export async function clickRefreshButton(
   debug("Looking for refresh button...");
 
   // Navigate to home and click refresh button
-  await page.goto(mfUrls.home);
-  await page.waitForLoadState("networkidle");
+  await navigateToPage(page, mfUrls.home);
 
+  // Background requests can keep networkidle from being reached. Wait for the
+  // refresh control itself to be actionable instead.
   const refreshButton = page.locator('a:has-text("一括更新")').first();
-  await refreshButton.click();
+  await refreshButton.click({ timeout: REFRESH_BUTTON_TIMEOUT_MS });
 
   info("Refreshing accounts...");
 
