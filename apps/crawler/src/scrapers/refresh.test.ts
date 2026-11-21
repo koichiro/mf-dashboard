@@ -1,12 +1,62 @@
 import type { Page } from "playwright";
 import { describe, expect, test, vi } from "vitest";
 import {
+  clickRefreshButton,
   getMaxWaitMinutes,
   getRefreshStatus,
   navigateToAccountsPage,
   summarizeRefreshRows,
   type RefreshStatusRow,
 } from "./refresh.js";
+
+describe("clickRefreshButton", () => {
+  function createPage(clickError?: Error) {
+    const click = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    if (clickError) click.mockRejectedValue(clickError);
+    const button = { click };
+    const page = {
+      goto: vi.fn<() => Promise<null>>().mockResolvedValue(null),
+      waitForLoadState: vi
+        .fn<() => Promise<void>>()
+        .mockRejectedValue(new Error("Network is busy")),
+      waitForTimeout: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      locator: vi.fn<(selector: string) => unknown>((selector) => {
+        if (selector === 'a:has-text("一括更新")') return { first: () => button };
+        if (selector === "#account-table tr:has(td.account-status)") {
+          return { count: async () => 0 };
+        }
+        throw new Error("Unexpected selector");
+      }),
+    };
+    return { page, click };
+  }
+
+  test("通信が継続していてもボタンをクリックし更新完了を確認する", async () => {
+    const { page, click } = createPage();
+
+    await expect(clickRefreshButton(page as unknown as Page)).resolves.toEqual({
+      completed: true,
+      incompleteAccounts: [],
+    });
+    expect(page.goto).toHaveBeenNthCalledWith(1, "https://moneyforward.com/", {
+      waitUntil: "domcontentloaded",
+    });
+    expect(page.waitForLoadState).not.toHaveBeenCalled();
+    expect(click).toHaveBeenCalledExactlyOnceWith({ timeout: 120000 });
+    expect(page.goto).toHaveBeenNthCalledWith(2, "https://moneyforward.com/accounts", {
+      waitUntil: "domcontentloaded",
+    });
+  });
+
+  test("ボタンのクリックに失敗したら更新確認へ進まず元のエラーを返す", async () => {
+    const error = new Error("Refresh button timed out");
+    const { page } = createPage(error);
+
+    await expect(clickRefreshButton(page as unknown as Page)).rejects.toBe(error);
+    expect(page.goto).toHaveBeenCalledTimes(1);
+    expect(page.waitForTimeout).not.toHaveBeenCalled();
+  });
+});
 
 describe("getMaxWaitMinutes", () => {
   test.each([undefined, "", "0", "-1", "Infinity", "NaN"])(
@@ -118,7 +168,7 @@ describe("navigateToAccountsPage", () => {
   test.each([
     "page.goto: net::ERR_ABORTED at https://moneyforward.com/accounts",
     "page.goto: Timeout 30000ms exceeded.",
-  ])("一時的な遷移エラーを1回だけ再試行する: %s", async (message) => {
+  ])("一時的な遷移エラーの後に再試行して復旧する: %s", async (message) => {
     const goto = vi
       .fn<(...args: any[]) => any>()
       .mockRejectedValueOnce(new Error(message))

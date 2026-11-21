@@ -8,7 +8,7 @@ const { debug, getCredentials, log } = vi.hoisted(() => ({
   log: vi.fn<(...args: unknown[]) => void>(),
 }));
 
-vi.mock("../logger.js", () => ({ debug, log }));
+vi.mock("../logger.js", () => ({ debug, log, warn: vi.fn<(...args: unknown[]) => void>() }));
 vi.mock("./credentials.js", () => ({
   getCredentials,
   getOTP: vi.fn<() => Promise<string>>(),
