@@ -8,7 +8,6 @@ export async function getAssetSummary(page: Page): Promise<AssetSummary> {
 
   await page.goto(mfUrls.home, {
     waitUntil: "domcontentloaded",
-    timeout: 30000,
   });
   // 資産表示エリアが表示されるまで待機
   await page

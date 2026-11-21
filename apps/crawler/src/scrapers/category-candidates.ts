@@ -81,7 +81,6 @@ export function buildCategoryCandidates(
 export async function scrapeCategoryCandidates(page: Page): Promise<CategoryCandidate[]> {
   await page.goto(mfUrls.categoryRules, {
     waitUntil: "domcontentloaded",
-    timeout: 30000,
   });
   await page.locator("#category-settings").waitFor({ state: "visible", timeout: 30000 });
 

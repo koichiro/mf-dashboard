@@ -129,10 +129,9 @@ describe("navigateToAccountsPage", () => {
     await navigateToAccountsPage(retryPage, { retryDelayMs: 0 });
 
     expect(goto).toHaveBeenCalledTimes(2);
-    expect(goto).toHaveBeenCalledWith(
-      "https://moneyforward.com/accounts",
-      expect.objectContaining({ timeout: 60000, waitUntil: "domcontentloaded" }),
-    );
+    expect(goto).toHaveBeenCalledWith("https://moneyforward.com/accounts", {
+      waitUntil: "domcontentloaded",
+    });
   });
 
   test("Page crashedは再試行せず元のエラーを返す", async () => {

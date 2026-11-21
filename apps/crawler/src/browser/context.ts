@@ -7,7 +7,7 @@ const USER_AGENT =
 const LOCALE = "ja-JP";
 const TIMEZONE = "Asia/Tokyo";
 const DEFAULT_TIMEOUT = 5000;
-const NAVIGATION_TIMEOUT = 30000;
+const NAVIGATION_TIMEOUT = 120000;
 
 type CreateContextOptions = {
   /** storageStateのパスを直接指定（テスト用） */
